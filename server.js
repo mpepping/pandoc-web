@@ -16,7 +16,7 @@ app.use(express.json());
 app.use(express.static('.'));
 
 app.post('/convert', async (req, res) => {
-    const { markdown } = req.body;
+    const { markdown, orientation = 'portrait' } = req.body;
 
     if (!markdown) {
         return res.status(400).send('No markdown content provided');
@@ -29,7 +29,8 @@ app.post('/convert', async (req, res) => {
     try {
         fs.writeFileSync(inputFile, markdown);
 
-        const dockerCmd = `docker run --rm -v "${tempDir}:/workspace" -v "${path.join(__dirname, 'assets')}:/assets" ghcr.io/mpepping/pandoc:latest -f markdown -t pdf --pdf-engine=lualatex -V geometry:a4paper --template /assets/eisvogel.tex --number-sections --variable caption-justification=centering -V mainfont="sourcesanspro" -V sansfont="sourcesanspro" -V monofont="sourcecodepro" -V emoji-font="Noto Color Emoji" -o /workspace/${sessionId}.pdf /workspace/${sessionId}.md`;
+        const geometryOption = orientation === 'landscape' ? 'a4paper,landscape' : 'a4paper';
+        const dockerCmd = `docker run --rm -v "${tempDir}:/workspace" -v "${path.join(__dirname, 'assets')}:/assets" ghcr.io/mpepping/pandoc:latest -f markdown -t pdf --pdf-engine=lualatex -V geometry:${geometryOption} --template /assets/eisvogel.tex --number-sections --variable caption-justification=centering -V mainfont="sourcesanspro" -V sansfont="sourcesanspro" -V monofont="sourcecodepro" -V emoji-font="Noto Color Emoji" -o /workspace/${sessionId}.pdf /workspace/${sessionId}.md`;
 
         exec(dockerCmd, (error, stdout, stderr) => {
             if (error) {
