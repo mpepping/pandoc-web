@@ -96,6 +96,17 @@
             outline: none;
             border-color: var(--button-bg);
         }
+        textarea.drag-over {
+            border-color: var(--button-bg);
+            border-style: dashed;
+            background-color: var(--info-bg);
+        }
+        .upload-hint {
+            color: var(--text-secondary);
+            font-size: 12px;
+            margin-top: 5px;
+            font-style: italic;
+        }
         .button-group {
             text-align: center;
             margin-top: 20px;
@@ -150,7 +161,8 @@
         <form id="convertForm">
             <div class="form-group">
                 <label for="markdown">Markdown Content:</label>
-                <textarea id="markdown" name="markdown" placeholder="Enter your markdown text here..."></textarea>
+                <textarea id="markdown" name="markdown" placeholder="Enter your markdown text here or drag and drop a .md file..."></textarea>
+                <div class="upload-hint">💡 Tip: You can paste markdown text or drag & drop .md files here</div>
             </div>
             
             <div class="button-group">
@@ -204,6 +216,110 @@
             markdownText.value = '';
             hideStatus();
         });
+
+        // Drag and drop functionality
+        markdownText.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            markdownText.classList.add('drag-over');
+        });
+
+        markdownText.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            markdownText.classList.remove('drag-over');
+        });
+
+        markdownText.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            markdownText.classList.remove('drag-over');
+
+            const files = Array.from(e.dataTransfer.files);
+            const markdownFiles = files.filter(file => 
+                file.type === 'text/markdown' || 
+                file.name.toLowerCase().endsWith('.md') ||
+                file.name.toLowerCase().endsWith('.markdown') ||
+                file.type === 'text/plain'
+            );
+
+            if (markdownFiles.length === 0) {
+                showStatus('Please drop a markdown (.md) file', 'error');
+                return;
+            }
+
+            if (markdownFiles.length > 1) {
+                showStatus('Please drop only one file at a time', 'error');
+                return;
+            }
+
+            const file = markdownFiles[0];
+            try {
+                const text = await file.text();
+                markdownText.value = text;
+                showStatus(`File "${file.name}" loaded successfully!`, 'success');
+                setTimeout(hideStatus, 3000);
+            } catch (error) {
+                showStatus(`Error reading file: ${error.message}`, 'error');
+            }
+        });
+
+        // Enhanced paste functionality
+        markdownText.addEventListener('paste', async (e) => {
+            const clipboardData = e.clipboardData || window.clipboardData;
+            
+            // Check if there are files in the clipboard
+            const files = Array.from(clipboardData.files);
+            if (files.length > 0) {
+                e.preventDefault();
+                
+                const markdownFiles = files.filter(file => 
+                    file.type === 'text/markdown' || 
+                    file.name.toLowerCase().endsWith('.md') ||
+                    file.name.toLowerCase().endsWith('.markdown') ||
+                    file.type === 'text/plain'
+                );
+
+                if (markdownFiles.length > 0) {
+                    const file = markdownFiles[0];
+                    try {
+                        const text = await file.text();
+                        markdownText.value = text;
+                        showStatus(`File pasted successfully!`, 'success');
+                        setTimeout(hideStatus, 3000);
+                    } catch (error) {
+                        showStatus(`Error reading pasted file: ${error.message}`, 'error');
+                    }
+                }
+            }
+            
+            // Check for plain text that might be markdown
+            const pastedText = clipboardData.getData('text');
+            if (pastedText && !files.length) {
+                // Check if the pasted text looks like markdown
+                if (isLikelyMarkdown(pastedText)) {
+                    showStatus('Markdown content detected!', 'info');
+                    setTimeout(hideStatus, 2000);
+                }
+            }
+        });
+
+        // Helper function to detect if text is likely markdown
+        function isLikelyMarkdown(text) {
+            const markdownIndicators = [
+                /^#{1,6}\s/m,           // Headers
+                /^\*\s/m,               // Unordered lists
+                /^\d+\.\s/m,            // Ordered lists
+                /\*\*.*\*\*/,           // Bold text
+                /\*.*\*/,               // Italic text
+                /\[.*\]\(.*\)/,         // Links
+                /```/,                  // Code blocks
+                /`.*`/,                 // Inline code
+                /^\>/m                  // Blockquotes
+            ];
+            
+            return markdownIndicators.some(regex => regex.test(text));
+        }
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
