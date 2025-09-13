@@ -1,0 +1,17 @@
+FROM ghcr.io/mpepping/pandoc:latest
+
+COPY assets/ ./assets/
+RUN dnf install -y nodejs npm curl && dnf clean all
+
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+
+COPY pandoc-service.js ./
+RUN mkdir -p /workspace
+
+# Expose port
+EXPOSE 8080
+
+ENTRYPOINT []
+CMD ["node", "pandoc-service.js"]
