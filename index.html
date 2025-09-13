@@ -154,19 +154,58 @@
         }
         .orientation-group {
             display: flex;
-            gap: 20px;
+            align-items: center;
+            gap: 15px;
             margin-top: 8px;
         }
-        .radio-label {
+        .switch-container {
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-weight: normal;
-            cursor: pointer;
-            margin-bottom: 0;
+            gap: 10px;
         }
-        .radio-label input[type="radio"] {
-            margin: 0;
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--border-color);
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: var(--button-bg);
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        .orientation-label {
+            font-weight: normal;
+            color: var(--text-secondary);
+            margin-bottom: 0;
         }
     </style>
 </head>
@@ -184,14 +223,14 @@
             <div class="form-group">
                 <label>Page Orientation:</label>
                 <div class="orientation-group">
-                    <label class="radio-label">
-                        <input type="radio" name="orientation" value="portrait" id="portrait" checked>
-                        Portrait
-                    </label>
-                    <label class="radio-label">
-                        <input type="radio" name="orientation" value="landscape" id="landscape">
-                        Landscape
-                    </label>
+                    <span class="orientation-label">Portrait</span>
+                    <div class="switch-container">
+                        <label class="switch">
+                            <input type="checkbox" id="orientation-switch">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <span class="orientation-label">Landscape</span>
                 </div>
             </div>
             
@@ -360,7 +399,7 @@
                 return;
             }
 
-            const orientation = document.querySelector('input[name="orientation"]:checked').value;
+            const orientation = document.getElementById('orientation-switch').checked ? 'landscape' : 'portrait';
 
             convertBtn.disabled = true;
             convertBtn.textContent = 'Converting...';
