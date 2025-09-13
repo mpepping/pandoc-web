@@ -59,7 +59,7 @@ jobs:
 
       - name: Extract Docker metadata for ${{ matrix.service }}
         id: meta
-        uses: docker/metadata-action@v5.7.0
+        uses: docker/metadata-action@v5.8.0
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository }}-${{ matrix.service }}
           tags: |
