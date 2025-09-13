@@ -3,7 +3,6 @@ const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const FormData = require('form-data');
-const fetch = require('node-fetch');
 
 const app = express();
 const port = 3000;
@@ -48,7 +47,19 @@ app.post('/convert', async (req, res) => {
         res.setHeader('Content-Disposition', `attachment; filename="markdown${timestamp}.pdf"`);
 
         // Pipe the PDF response directly to the client
-        response.body.pipe(res);
+        const { Readable } = require('stream');
+        if (response.body && response.body.getReader) {
+            // Built-in fetch returns a ReadableStream
+            const readable = Readable.fromWeb(response.body);
+            readable.pipe(res);
+        } else if (response.body && response.body.pipe) {
+            // node-fetch compatibility
+            response.body.pipe(res);
+        } else {
+            // Fallback: convert to buffer
+            const buffer = Buffer.from(await response.arrayBuffer());
+            res.send(buffer);
+        }
 
     } catch (err) {
         console.error('Request to pandoc service failed:', err);
