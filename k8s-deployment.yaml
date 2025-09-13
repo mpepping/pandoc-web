@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pandoc-web
+  labels:
+    app: pandoc-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pandoc-web
+  template:
+    metadata:
+      labels:
+        app: pandoc-web
+    spec:
+      containers:
+      - name: pandoc-web-app
+        image: ghcr.io/mpepping/pandoc-web-app:main
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+        env:
+        - name: PANDOC_SERVICE_URL
+          value: "http://localhost:8080"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+      - name: pandoc-web-api
+        image: ghcr.io/mpepping/pandoc-web-api:main
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: workspace
+          mountPath: /workspace
+        command: ["node", "/app/pandoc-service.js"]
+        env:
+        - name: TEXMFCACHE
+          value: "/workspace/.texlive"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 40
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 10
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "500m"
+          limits:
+            memory: "1024Mi"
+            cpu: "1000m"
+      volumes:
+      - name: workspace
+        emptyDir:
+          medium: Memory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pandoc-web-service
+  labels:
+    app: pandoc-web
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3000
+    targetPort: 3000
+    protocol: TCP
+  selector:
+    app: pandoc-web

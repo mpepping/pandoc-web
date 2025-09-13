@@ -23,7 +23,7 @@ services:
     image: ghcr.io/mpepping/pandoc-web-api:main
     container_name: "pandoc-api"
     volumes:
-      - temp-files:/tmp
+      - workspace:/workspace
     expose:
       - "8080"
     restart: unless-stopped
@@ -37,7 +37,7 @@ services:
       - pandoc-net
 
 volumes:
-  temp-files:
+  workspace:
     driver: local
     driver_opts:
       type: tmpfs

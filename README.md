@@ -21,8 +21,8 @@ A simple web application that converts Markdown text to PDF using Pandoc. Paste 
    ```
 
 2. Access the application:
-   - If using a LoadBalancer: Check the external IP with `kubectl get svc pandoc-web-service`
-   - If using port-forward: `kubectl port-forward deployment/pandoc-web 3000:3000`
+   - If using a LoadBalancer: Check the external IP with `kubectl -n $NS get svc pandoc-web-service`
+   - If using port-forward: `kubectl -n $NS port-forward deployment/pandoc-web 3000:3000`
    - Then open <http://localhost:3000> in your browser
 
 Instead of building the images locally, you can also pull the pre-built images from GitHub Container Registry. Update your `docker-compose.yml` to use:

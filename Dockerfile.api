@@ -10,7 +10,8 @@ RUN npm install
 COPY pandoc-service.js ./
 RUN mkdir -p /workspace
 
-# Expose port
+ENV TEXMFCACHE=/workspace/.texlive
+
 EXPOSE 8080
 
 ENTRYPOINT []
