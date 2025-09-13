@@ -10,7 +10,7 @@
   "dependencies": {
     "express": "^4.18.2",
     "form-data": "^4.0.0",
-    "multer": "^1.4.5-lts.1",
+    "multer": "^2.0.2",
     "node-fetch": "^2.7.0",
     "uuid": "^9.0.0"
   },
@@ -23,3 +23,4 @@
   "author": "",
   "license": "MIT"
 }
+
