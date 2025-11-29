@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "express": "^5.1.0",
-    "form-data": "^4.0.0",
+    "form-data": "^4.0.5",
     "multer": "^2.0.2",
     "uuid": "^13.0.0"
   },
