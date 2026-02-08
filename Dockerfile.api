@@ -1,4 +1,4 @@
-FROM ghcr.io/mpepping/pandoc:latest
+FROM ghcr.io/mpepping/pandoc:main
 
 COPY assets/ ./assets/
 RUN dnf install -y nodejs npm curl && dnf clean all

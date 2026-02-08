@@ -1,546 +1,579 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pandoc Web - Markdown to PDF</title>
     <style>
+      :root {
+        --bg-color: #f5f5f5;
+        --container-bg: white;
+        --text-color: #333;
+        --text-secondary: #555;
+        --border-color: #ddd;
+        --button-bg: #4caf50;
+        --button-hover: #45a049;
+        --button-disabled: #cccccc;
+        --shadow-color: rgba(0, 0, 0, 0.1);
+        --success-bg: #d4edda;
+        --success-color: #155724;
+        --success-border: #c3e6cb;
+        --error-bg: #f8d7da;
+        --error-color: #721c24;
+        --error-border: #f5c6cb;
+        --info-bg: #d1ecf1;
+        --info-color: #0c5460;
+        --info-border: #bee5eb;
+      }
+
+      @media (prefers-color-scheme: dark) {
         :root {
-            --bg-color: #f5f5f5;
-            --container-bg: white;
-            --text-color: #333;
-            --text-secondary: #555;
-            --border-color: #ddd;
-            --button-bg: #4CAF50;
-            --button-hover: #45a049;
-            --button-disabled: #cccccc;
-            --shadow-color: rgba(0,0,0,0.1);
-            --success-bg: #d4edda;
-            --success-color: #155724;
-            --success-border: #c3e6cb;
-            --error-bg: #f8d7da;
-            --error-color: #721c24;
-            --error-border: #f5c6cb;
-            --info-bg: #d1ecf1;
-            --info-color: #0c5460;
-            --info-border: #bee5eb;
+          --bg-color: #1a1a1a;
+          --container-bg: #2d2d2d;
+          --text-color: #e0e0e0;
+          --text-secondary: #b0b0b0;
+          --border-color: #555;
+          --button-bg: #4caf50;
+          --button-hover: #45a049;
+          --button-disabled: #666;
+          --shadow-color: rgba(0, 0, 0, 0.3);
+          --success-bg: #1a3a1a;
+          --success-color: #90ee90;
+          --success-border: #2d5a2d;
+          --error-bg: #3a1a1a;
+          --error-color: #ffb3ba;
+          --error-border: #5a2d2d;
+          --info-bg: #1a2a3a;
+          --info-color: #87ceeb;
+          --info-border: #2d3a5a;
         }
+      }
 
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --bg-color: #1a1a1a;
-                --container-bg: #2d2d2d;
-                --text-color: #e0e0e0;
-                --text-secondary: #b0b0b0;
-                --border-color: #555;
-                --button-bg: #4CAF50;
-                --button-hover: #45a049;
-                --button-disabled: #666;
-                --shadow-color: rgba(0,0,0,0.3);
-                --success-bg: #1a3a1a;
-                --success-color: #90ee90;
-                --success-border: #2d5a2d;
-                --error-bg: #3a1a1a;
-                --error-color: #ffb3ba;
-                --error-border: #5a2d2d;
-                --info-bg: #1a2a3a;
-                --info-color: #87ceeb;
-                --info-border: #2d3a5a;
-            }
-        }
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        transition:
+          background-color 0.3s ease,
+          color 0.3s ease;
+      }
+      .container {
+        background: var(--container-bg);
+        padding: 30px 40px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px var(--shadow-color);
+        transition:
+          background-color 0.3s ease,
+          box-shadow 0.3s ease;
+      }
+      h1 {
+        color: var(--text-color);
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .form-group {
+        margin-bottom: 20px;
+      }
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: bold;
+        color: var(--text-secondary);
+      }
+      textarea {
+        width: 100%;
+        height: 300px;
+        padding: 12px;
+        border: 2px solid var(--border-color);
+        border-radius: 5px;
+        font-family: "Courier New", monospace;
+        font-size: 14px;
+        resize: vertical;
+        background-color: var(--container-bg);
+        color: var(--text-color);
+        transition:
+          border-color 0.3s ease,
+          background-color 0.3s ease,
+          color 0.3s ease;
+        box-sizing: border-box;
+      }
+      textarea:focus {
+        outline: none;
+        border-color: var(--button-bg);
+      }
+      textarea.drag-over {
+        border-color: var(--button-bg);
+        border-style: dashed;
+        background-color: var(--info-bg);
+      }
+      .upload-hint {
+        color: var(--text-secondary);
+        font-size: 12px;
+        margin-top: 5px;
+        font-style: italic;
+      }
 
+      /* Mobile responsiveness */
+      @media (max-width: 768px) {
         body {
-            font-family: Arial, sans-serif;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            transition: background-color 0.3s ease, color 0.3s ease;
+          padding: 10px;
+          max-width: 100%;
         }
+
         .container {
-            background: var(--container-bg);
-            padding: 30px 40px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px var(--shadow-color);
-            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+          padding: 20px;
+          border-radius: 5px;
         }
+
         h1 {
-            color: var(--text-color);
-            text-align: center;
-            margin-bottom: 30px;
+          font-size: 24px;
+          margin-bottom: 20px;
         }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            color: var(--text-secondary);
-        }
+
         textarea {
-            width: 100%;
-            height: 300px;
-            padding: 12px;
-            border: 2px solid var(--border-color);
-            border-radius: 5px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            resize: vertical;
-            background-color: var(--container-bg);
-            color: var(--text-color);
-            transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease;
-            box-sizing: border-box;
-        }
-        textarea:focus {
-            outline: none;
-            border-color: var(--button-bg);
-        }
-        textarea.drag-over {
-            border-color: var(--button-bg);
-            border-style: dashed;
-            background-color: var(--info-bg);
-        }
-        .upload-hint {
-            color: var(--text-secondary);
-            font-size: 12px;
-            margin-top: 5px;
-            font-style: italic;
+          height: 250px;
+          font-size: 16px; /* Prevents zoom on iOS */
+          padding: 15px;
+          min-height: 44px; /* Minimum touch target size */
         }
 
-        /* Mobile responsiveness */
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
-                max-width: 100%;
-            }
-
-            .container {
-                padding: 20px;
-                border-radius: 5px;
-            }
-
-            h1 {
-                font-size: 24px;
-                margin-bottom: 20px;
-            }
-
-            textarea {
-                height: 250px;
-                font-size: 16px; /* Prevents zoom on iOS */
-                padding: 15px;
-                min-height: 44px; /* Minimum touch target size */
-            }
-
-            .button-group {
-                flex-direction: column;
-                gap: 15px;
-            }
-
-            button {
-                width: 100%;
-                padding: 15px 20px;
-                font-size: 16px;
-                margin: 0;
-                min-height: 44px; /* Minimum touch target size */
-                border-radius: 8px;
-            }
-
-            .orientation-group {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 15px;
-                margin-top: 15px;
-            }
-
-            .switch-container {
-                justify-content: space-between;
-                width: 100%;
-                min-height: 44px;
-                align-items: center;
-            }
-
-            .switch {
-                width: 70px;
-                height: 40px;
-            }
-
-            .slider:before {
-                height: 32px;
-                width: 32px;
-                left: 4px;
-                bottom: 4px;
-            }
-
-            input:checked + .slider:before {
-                transform: translateX(30px);
-            }
-
-            label {
-                font-size: 16px;
-                line-height: 1.4;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .container {
-                padding: 15px;
-            }
-
-            h1 {
-                font-size: 20px;
-            }
-
-            textarea {
-                height: 200px;
-                padding: 12px;
-            }
-
-            .upload-hint {
-                font-size: 11px;
-            }
-        }
         .button-group {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 20px;
+          flex-direction: column;
+          gap: 15px;
         }
+
         button {
-            background-color: var(--button-bg);
-            color: white;
-            padding: 12px 30px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            margin: 0 10px;
-            transition: background-color 0.3s ease;
+          width: 100%;
+          padding: 15px 20px;
+          font-size: 16px;
+          margin: 0;
+          min-height: 44px; /* Minimum touch target size */
+          border-radius: 8px;
         }
-        button:hover {
-            background-color: var(--button-hover);
-        }
-        button:disabled {
-            background-color: var(--button-disabled);
-            cursor: not-allowed;
-        }
-        .status {
-            margin-top: 20px;
-            padding: 10px;
-            border-radius: 5px;
-            text-align: center;
-            display: none;
-            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-        }
-        .status.success {
-            background-color: var(--success-bg);
-            color: var(--success-color);
-            border: 1px solid var(--success-border);
-        }
-        .status.error {
-            background-color: var(--error-bg);
-            color: var(--error-color);
-            border: 1px solid var(--error-border);
-        }
-        .status.info {
-            background-color: var(--info-bg);
-            color: var(--info-color);
-            border: 1px solid var(--info-border);
-        }
+
         .orientation-group {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-top: 8px;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 15px;
+          margin-top: 15px;
         }
+
         .switch-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
+          justify-content: space-between;
+          width: 100%;
+          min-height: 44px;
+          align-items: center;
         }
+
         .switch {
-            position: relative;
-            display: inline-block;
-            width: 60px;
-            height: 34px;
+          width: 70px;
+          height: 40px;
         }
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: var(--border-color);
-            transition: .4s;
-            border-radius: 34px;
-        }
+
         .slider:before {
-            position: absolute;
-            content: "";
-            height: 26px;
-            width: 26px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
+          height: 32px;
+          width: 32px;
+          left: 4px;
+          bottom: 4px;
         }
-        input:checked + .slider {
-            background-color: var(--button-bg);
-        }
+
         input:checked + .slider:before {
-            transform: translateX(26px);
+          transform: translateX(30px);
         }
-        .orientation-label {
-            font-weight: normal;
-            color: var(--text-secondary);
-            margin-bottom: 0;
+
+        label {
+          font-size: 16px;
+          line-height: 1.4;
         }
+      }
+
+      @media (max-width: 480px) {
+        .container {
+          padding: 15px;
+        }
+
+        h1 {
+          font-size: 20px;
+        }
+
+        textarea {
+          height: 200px;
+          padding: 12px;
+        }
+
+        .upload-hint {
+          font-size: 11px;
+        }
+      }
+      .button-group {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 20px;
+      }
+      button {
+        background-color: var(--button-bg);
+        color: white;
+        padding: 12px 30px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        margin: 0 10px;
+        transition: background-color 0.3s ease;
+      }
+      button:hover {
+        background-color: var(--button-hover);
+      }
+      button:disabled {
+        background-color: var(--button-disabled);
+        cursor: not-allowed;
+      }
+      .status {
+        margin-top: 20px;
+        padding: 10px;
+        border-radius: 5px;
+        text-align: center;
+        display: none;
+        transition:
+          background-color 0.3s ease,
+          color 0.3s ease,
+          border-color 0.3s ease;
+      }
+      .status.success {
+        background-color: var(--success-bg);
+        color: var(--success-color);
+        border: 1px solid var(--success-border);
+      }
+      .status.error {
+        background-color: var(--error-bg);
+        color: var(--error-color);
+        border: 1px solid var(--error-border);
+      }
+      .status.info {
+        background-color: var(--info-bg);
+        color: var(--info-color);
+        border: 1px solid var(--info-border);
+      }
+      .orientation-group {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-top: 8px;
+      }
+      .switch-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+      }
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: var(--border-color);
+        transition: 0.4s;
+        border-radius: 34px;
+      }
+      .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: 0.4s;
+        border-radius: 50%;
+      }
+      input:checked + .slider {
+        background-color: var(--button-bg);
+      }
+      input:checked + .slider:before {
+        transform: translateX(26px);
+      }
+      .orientation-label {
+        font-weight: normal;
+        color: var(--text-secondary);
+        margin-bottom: 0;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <h1>Pandoc Web: Markdown to PDF</h1>
+      <h1>Pandoc Web: Markdown to PDF</h1>
 
-        <form id="convertForm">
-            <div class="form-group">
-                <label for="markdown">Markdown Content:</label>
-                <textarea id="markdown" name="markdown" placeholder="Enter your markdown text here or drag and drop a .md file..."></textarea>
-                <div class="upload-hint">💡 Tip: You can paste markdown text or drag & drop .md files here</div>
+      <form id="convertForm">
+        <div class="form-group">
+          <label for="markdown">Markdown Content:</label>
+          <textarea
+            id="markdown"
+            name="markdown"
+            placeholder="Enter your markdown text here or drag and drop a .md file..."
+          ></textarea>
+          <div class="upload-hint">
+            💡 Tip: You can paste markdown text or drag & drop .md files here
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Page Orientation:</label>
+          <div class="orientation-group">
+            <span class="orientation-label">Portrait</span>
+            <div class="switch-container">
+              <label class="switch">
+                <input type="checkbox" id="orientation-switch" />
+                <span class="slider"></span>
+              </label>
             </div>
+            <span class="orientation-label">Landscape</span>
+          </div>
+        </div>
 
-            <div class="form-group">
-                <label>Page Orientation:</label>
-                <div class="orientation-group">
-                    <span class="orientation-label">Portrait</span>
-                    <div class="switch-container">
-                        <label class="switch">
-                            <input type="checkbox" id="orientation-switch">
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <span class="orientation-label">Landscape</span>
-                </div>
-            </div>
+        <div class="button-group">
+          <button type="submit" id="convertBtn">Convert to PDF</button>
+          <button type="button" id="clearBtn">Clear</button>
+        </div>
+      </form>
 
-            <div class="button-group">
-                <button type="submit" id="convertBtn">Convert to PDF</button>
-                <button type="button" id="clearBtn">Clear</button>
-            </div>
-        </form>
-
-        <div id="status" class="status"></div>
+      <div id="status" class="status"></div>
     </div>
 
     <script>
-        const form = document.getElementById('convertForm');
-        const markdownText = document.getElementById('markdown');
-        const convertBtn = document.getElementById('convertBtn');
-        const clearBtn = document.getElementById('clearBtn');
-        const status = document.getElementById('status');
+      const form = document.getElementById("convertForm");
+      const markdownText = document.getElementById("markdown");
+      const convertBtn = document.getElementById("convertBtn");
+      const clearBtn = document.getElementById("clearBtn");
+      const status = document.getElementById("status");
 
-        // Initialize dark mode based on system preference
-        function initializeDarkMode() {
-            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                document.body.classList.add('dark-mode');
-            }
-
-            // Listen for system theme changes
-            if (window.matchMedia) {
-                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-                    if (e.matches) {
-                        document.body.classList.add('dark-mode');
-                    } else {
-                        document.body.classList.remove('dark-mode');
-                    }
-                });
-            }
+      // Initialize dark mode based on system preference
+      function initializeDarkMode() {
+        if (
+          window.matchMedia &&
+          window.matchMedia("(prefers-color-scheme: dark)").matches
+        ) {
+          document.body.classList.add("dark-mode");
         }
 
-        // Initialize dark mode on page load
-        initializeDarkMode();
+        // Listen for system theme changes
+        if (window.matchMedia) {
+          window
+            .matchMedia("(prefers-color-scheme: dark)")
+            .addEventListener("change", (e) => {
+              if (e.matches) {
+                document.body.classList.add("dark-mode");
+              } else {
+                document.body.classList.remove("dark-mode");
+              }
+            });
+        }
+      }
 
-        function showStatus(message, type) {
-            status.textContent = message;
-            status.className = `status ${type}`;
-            status.style.display = 'block';
+      // Initialize dark mode on page load
+      initializeDarkMode();
+
+      function showStatus(message, type) {
+        status.textContent = message;
+        status.className = `status ${type}`;
+        status.style.display = "block";
+      }
+
+      function hideStatus() {
+        status.style.display = "none";
+      }
+
+      clearBtn.addEventListener("click", () => {
+        markdownText.value = "";
+        hideStatus();
+      });
+
+      // Drag and drop functionality
+      markdownText.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        markdownText.classList.add("drag-over");
+      });
+
+      markdownText.addEventListener("dragleave", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        markdownText.classList.remove("drag-over");
+      });
+
+      markdownText.addEventListener("drop", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        markdownText.classList.remove("drag-over");
+
+        const files = Array.from(e.dataTransfer.files);
+        const markdownFiles = files.filter(
+          (file) =>
+            file.type === "text/markdown" ||
+            file.name.toLowerCase().endsWith(".md") ||
+            file.name.toLowerCase().endsWith(".markdown") ||
+            file.type === "text/plain",
+        );
+
+        if (markdownFiles.length === 0) {
+          showStatus("Please drop a markdown (.md) file", "error");
+          return;
         }
 
-        function hideStatus() {
-            status.style.display = 'none';
+        if (markdownFiles.length > 1) {
+          showStatus("Please drop only one file at a time", "error");
+          return;
         }
 
-        clearBtn.addEventListener('click', () => {
-            markdownText.value = '';
-            hideStatus();
-        });
+        const file = markdownFiles[0];
+        try {
+          const text = await file.text();
+          markdownText.value = text;
+          showStatus(`File "${file.name}" loaded successfully!`, "success");
+          setTimeout(hideStatus, 3000);
+        } catch (error) {
+          showStatus(`Error reading file: ${error.message}`, "error");
+        }
+      });
 
-        // Drag and drop functionality
-        markdownText.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            markdownText.classList.add('drag-over');
-        });
+      // Enhanced paste functionality
+      markdownText.addEventListener("paste", async (e) => {
+        const clipboardData = e.clipboardData || window.clipboardData;
 
-        markdownText.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            markdownText.classList.remove('drag-over');
-        });
+        // Check if there are files in the clipboard
+        const files = Array.from(clipboardData.files);
+        if (files.length > 0) {
+          e.preventDefault();
 
-        markdownText.addEventListener('drop', async (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            markdownText.classList.remove('drag-over');
+          const markdownFiles = files.filter(
+            (file) =>
+              file.type === "text/markdown" ||
+              file.name.toLowerCase().endsWith(".md") ||
+              file.name.toLowerCase().endsWith(".markdown") ||
+              file.type === "text/plain",
+          );
 
-            const files = Array.from(e.dataTransfer.files);
-            const markdownFiles = files.filter(file =>
-                file.type === 'text/markdown' ||
-                file.name.toLowerCase().endsWith('.md') ||
-                file.name.toLowerCase().endsWith('.markdown') ||
-                file.type === 'text/plain'
-            );
-
-            if (markdownFiles.length === 0) {
-                showStatus('Please drop a markdown (.md) file', 'error');
-                return;
-            }
-
-            if (markdownFiles.length > 1) {
-                showStatus('Please drop only one file at a time', 'error');
-                return;
-            }
-
+          if (markdownFiles.length > 0) {
             const file = markdownFiles[0];
             try {
-                const text = await file.text();
-                markdownText.value = text;
-                showStatus(`File "${file.name}" loaded successfully!`, 'success');
-                setTimeout(hideStatus, 3000);
+              const text = await file.text();
+              markdownText.value = text;
+              showStatus(`File pasted successfully!`, "success");
+              setTimeout(hideStatus, 3000);
             } catch (error) {
-                showStatus(`Error reading file: ${error.message}`, 'error');
+              showStatus(
+                `Error reading pasted file: ${error.message}`,
+                "error",
+              );
             }
-        });
-
-        // Enhanced paste functionality
-        markdownText.addEventListener('paste', async (e) => {
-            const clipboardData = e.clipboardData || window.clipboardData;
-
-            // Check if there are files in the clipboard
-            const files = Array.from(clipboardData.files);
-            if (files.length > 0) {
-                e.preventDefault();
-
-                const markdownFiles = files.filter(file =>
-                    file.type === 'text/markdown' ||
-                    file.name.toLowerCase().endsWith('.md') ||
-                    file.name.toLowerCase().endsWith('.markdown') ||
-                    file.type === 'text/plain'
-                );
-
-                if (markdownFiles.length > 0) {
-                    const file = markdownFiles[0];
-                    try {
-                        const text = await file.text();
-                        markdownText.value = text;
-                        showStatus(`File pasted successfully!`, 'success');
-                        setTimeout(hideStatus, 3000);
-                    } catch (error) {
-                        showStatus(`Error reading pasted file: ${error.message}`, 'error');
-                    }
-                }
-            }
-
-            // Check for plain text that might be markdown
-            const pastedText = clipboardData.getData('text');
-            if (pastedText && !files.length) {
-                // Check if the pasted text looks like markdown
-                if (isLikelyMarkdown(pastedText)) {
-                    showStatus('Markdown content detected!', 'info');
-                    setTimeout(hideStatus, 2000);
-                }
-            }
-        });
-
-        // Helper function to detect if text is likely markdown
-        function isLikelyMarkdown(text) {
-            const markdownIndicators = [
-                /^#{1,6}\s/m,           // Headers
-                /^\*\s/m,               // Unordered lists
-                /^\d+\.\s/m,            // Ordered lists
-                /\*\*.*\*\*/,           // Bold text
-                /\*.*\*/,               // Italic text
-                /\[.*\]\(.*\)/,         // Links
-                /```/,                  // Code blocks
-                /`.*`/,                 // Inline code
-                /^\>/m                  // Blockquotes
-            ];
-
-            return markdownIndicators.some(regex => regex.test(text));
+          }
         }
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
+        // Check for plain text that might be markdown
+        const pastedText = clipboardData.getData("text");
+        if (pastedText && !files.length) {
+          // Check if the pasted text looks like markdown
+          if (isLikelyMarkdown(pastedText)) {
+            showStatus("Markdown content detected!", "info");
+            setTimeout(hideStatus, 2000);
+          }
+        }
+      });
 
-            const markdown = markdownText.value.trim();
-            if (!markdown) {
-                showStatus('Please enter some markdown text.', 'error');
-                return;
-            }
+      // Helper function to detect if text is likely markdown
+      function isLikelyMarkdown(text) {
+        const markdownIndicators = [
+          /^#{1,6}\s/m, // Headers
+          /^\*\s/m, // Unordered lists
+          /^\d+\.\s/m, // Ordered lists
+          /\*\*.*\*\*/, // Bold text
+          /\*.*\*/, // Italic text
+          /\[.*\]\(.*\)/, // Links
+          /```/, // Code blocks
+          /`.*`/, // Inline code
+          /^\>/m, // Blockquotes
+        ];
 
-            const orientation = document.getElementById('orientation-switch').checked ? 'landscape' : 'portrait';
+        return markdownIndicators.some((regex) => regex.test(text));
+      }
 
-            convertBtn.disabled = true;
-            convertBtn.textContent = 'Converting...';
-            showStatus('Converting markdown to PDF...', 'info');
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
 
-            try {
-                const response = await fetch('/convert', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ markdown, orientation }),
-                });
+        const markdown = markdownText.value.trim();
+        if (!markdown) {
+          showStatus("Please enter some markdown text.", "error");
+          return;
+        }
 
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.style.display = 'none';
-                    a.href = url;
-                    const timestamp = Math.floor(Date.now() / 1000);
-                    a.download = `markdown${timestamp}.pdf`;
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    document.body.removeChild(a);
+        const orientation = document.getElementById("orientation-switch")
+          .checked
+          ? "landscape"
+          : "portrait";
 
-                    showStatus('PDF generated and download started!', 'success');
-                } else {
-                    const errorText = await response.text();
-                    showStatus(`Conversion failed: ${errorText}`, 'error');
-                }
-            } catch (error) {
-                showStatus(`Error: ${error.message}`, 'error');
-            } finally {
-                convertBtn.disabled = false;
-                convertBtn.textContent = 'Convert to PDF';
-            }
-        });
+        convertBtn.disabled = true;
+        convertBtn.textContent = "Converting...";
+        showStatus("Converting markdown to PDF...", "info");
 
-        // Sample markdown content
-        markdownText.value = `---
+        try {
+          const response = await fetch("/convert", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ markdown, orientation }),
+          });
+
+          if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.style.display = "none";
+            a.href = url;
+            const timestamp = Math.floor(Date.now() / 1000);
+            a.download = `markdown${timestamp}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            showStatus("PDF generated and download started!", "success");
+          } else {
+            const errorText = await response.text();
+            showStatus(`Conversion failed: ${errorText}`, "error");
+          }
+        } catch (error) {
+          showStatus(`Error: ${error.message}`, "error");
+        } finally {
+          convertBtn.disabled = false;
+          convertBtn.textContent = "Convert to PDF";
+        }
+      });
+
+      // Sample markdown content
+      markdownText.value =
+        `---
 title: "Sample Document"
 author: "Pandoc Web"
-date: "` + new Date().toLocaleDateString() + `"
+date: "` +
+        new Date().toLocaleDateString() +
+        `"
+colorlinks: true
 ---
 
 # Sample Document
@@ -570,5 +603,5 @@ function greet(name) {
 
 > This is a blockquote example.`;
     </script>
-</body>
+  </body>
 </html>

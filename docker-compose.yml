@@ -1,9 +1,9 @@
 services:
   app:
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile.app
-    image: ghcr.io/mpepping/pandoc-web-app:main
+    build:
+      context: .
+      dockerfile: Dockerfile.app
+    # image: ghcr.io/mpepping/pandoc-web-app:main
     container_name: "pandoc-app"
     ports:
       - "3000:3000"
@@ -17,10 +17,10 @@ services:
       - pandoc-net
 
   api:
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile.api
-    image: ghcr.io/mpepping/pandoc-web-api:main
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    # image: ghcr.io/mpepping/pandoc-web-api:main
     container_name: "pandoc-api"
     volumes:
       - workspace:/workspace
