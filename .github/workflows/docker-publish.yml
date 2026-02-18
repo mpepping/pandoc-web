@@ -72,7 +72,7 @@ jobs:
 
       - name: Build and push ${{ matrix.service }} Docker image
         id: build-and-push
-        uses: docker/build-push-action@v6.19.1
+        uses: docker/build-push-action@v6.19.2
         with:
           context: .
           file: ./Dockerfile.${{ matrix.service }}
