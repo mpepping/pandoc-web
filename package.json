@@ -11,7 +11,7 @@
     "express": "^5.2.1",
     "form-data": "^4.0.5",
     "multer": "^2.1.1",
-    "uuid": "^13.0.0"
+    "uuid": "^14.0.0"
   },
   "keywords": [
     "pandoc",
