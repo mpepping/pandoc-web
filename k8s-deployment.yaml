@@ -23,6 +23,11 @@ spec:
         env:
         - name: PANDOC_SERVICE_URL
           value: "http://localhost:8080"
+        - name: PANDOC_INTERNAL_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: pandoc-web-secrets
+              key: internal-token
         resources:
           requests:
             memory: "128Mi"
@@ -42,6 +47,11 @@ spec:
         env:
         - name: TEXMFCACHE
           value: "/workspace/.texlive"
+        - name: PANDOC_INTERNAL_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: pandoc-web-secrets
+              key: internal-token
         livenessProbe:
           httpGet:
             path: /health

@@ -4,6 +4,25 @@ A simple web application that converts Markdown text to PDF using Pandoc. Paste 
 
 ## Getting Started
 
+### One-time setup: shared internal token
+
+The front-end (`pandoc-web-app`) authenticates to the backend (`pandoc-web-api`) using a shared `PANDOC_INTERNAL_TOKEN`. Both processes refuse to start if it isn't set, so configure it before launching.
+
+**Docker Compose** — create a `.env` file alongside `docker-compose.yml`:
+
+```bash
+echo "PANDOC_INTERNAL_TOKEN=$(openssl rand -hex 32)" > .env
+```
+
+Make sure `.env` is gitignored.
+
+**Kubernetes** — create a Secret named `pandoc-web-secrets` with key `internal-token`:
+
+```bash
+kubectl create secret generic pandoc-web-secrets \
+  --from-literal=internal-token="$(openssl rand -hex 32)"
+```
+
 ### Using Docker Compose:
 
 1. Start the application:

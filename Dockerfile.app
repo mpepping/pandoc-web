@@ -5,7 +5,7 @@ COPY package*.json ./
 RUN npm install
 
 COPY server.js ./
-COPY index.html ./
+COPY public/ ./public/
 
 RUN mkdir -p temp
 
