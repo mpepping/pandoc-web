@@ -2,6 +2,10 @@
 
 A simple web application that converts Markdown text to PDF or EPUB using Pandoc. Paste your Markdown text into the web interface, or drag and drop a `.md` file, pick an output format (PDF is the default), and get the converted file in return.
 
+<p align="center">
+  <img src="README-screenshot.png" alt="Pandoc Web interface" width="720" />
+</p>
+
 ## Getting Started
 
 ### One-time setup: shared internal token
