@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pandoc Web — Markdown to PDF</title>
+    <title>Pandoc Web — Markdown to PDF &amp; EPUB</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -257,6 +257,10 @@
       }
       .control.toolbar-end {
         margin-left: auto;
+      }
+      .control.is-disabled {
+        opacity: 0.4;
+        pointer-events: none;
       }
 
       .segmented {
@@ -926,7 +930,7 @@
           <div class="header-meta" aria-hidden="true">
             <span>Markdown</span>
             <span class="sep"></span>
-            <span>PDF</span>
+            <span id="formatMeta">PDF</span>
             <span class="sep"></span>
             <span>Typeset</span>
           </div>
@@ -975,6 +979,19 @@
 
       <section class="toolbar" aria-label="Document options">
         <div class="control">
+          <span class="control-label" id="lbl-format">Format</span>
+          <div
+            class="segmented"
+            data-group="format"
+            role="group"
+            aria-labelledby="lbl-format"
+          >
+            <button type="button" data-value="pdf" class="is-active">PDF</button>
+            <button type="button" data-value="epub">EPUB</button>
+          </div>
+        </div>
+
+        <div class="control" id="pageSizeControl">
           <span class="control-label" id="lbl-size">Page Size</span>
           <div
             class="segmented"
@@ -988,7 +1005,7 @@
           </div>
         </div>
 
-        <div class="control">
+        <div class="control" id="orientationControl">
           <span class="control-label" id="lbl-orient">Orientation</span>
           <div
             class="segmented"
@@ -1172,6 +1189,7 @@
       // ── state ──────────────────────────────────────
       const state = {
         view: "split",
+        format: "pdf",
         pageSize: "a4",
         orientation: "portrait",
       };
@@ -1193,6 +1211,20 @@
       const workspace = document.querySelector(".workspace");
       const toastContainer = document.getElementById("toastContainer");
       const shortcutHint = document.getElementById("shortcutHint");
+      const pageSizeControl = document.getElementById("pageSizeControl");
+      const orientationControl = document.getElementById("orientationControl");
+      const formatMetaEl = document.getElementById("formatMeta");
+      const convertLabelEl = convertBtn.querySelector(".btn-primary-label");
+
+      // Page size and orientation are PDF-only; EPUB reflows to the reader's
+      // viewport, so those controls are disabled when EPUB is selected.
+      function updateFormatUI() {
+        const isEpub = state.format === "epub";
+        pageSizeControl.classList.toggle("is-disabled", isEpub);
+        orientationControl.classList.toggle("is-disabled", isEpub);
+        convertLabelEl.textContent = isEpub ? "Convert to EPUB" : "Convert to PDF";
+        formatMetaEl.textContent = isEpub ? "EPUB" : "PDF";
+      }
 
       const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
       shortcutHint.textContent = isMac ? "⌘↵" : "Ctrl ↵";
@@ -1313,6 +1345,8 @@ function greet(name) {
           state[name] = val;
           if (name === "view") {
             workspace.dataset.view = val;
+          } else if (name === "format") {
+            updateFormatUI();
           }
         });
       });
@@ -1493,15 +1527,19 @@ function greet(name) {
           return;
         }
 
+        const format = state.format;
+        const isEpub = format === "epub";
+        const formatLabel = isEpub ? "EPUB" : "PDF";
+
         convertBtn.disabled = true;
         convertBtn.classList.add("is-loading");
         const labelEl = convertBtn.querySelector(".btn-primary-label");
         const originalLabel = labelEl.textContent;
-        labelEl.textContent = "Typesetting…";
+        labelEl.textContent = isEpub ? "Building…" : "Typesetting…";
 
         if (activeLoadingToast) activeLoadingToast.dismiss();
         activeLoadingToast = toast(
-          "Converting markdown to PDF…",
+          `Converting markdown to ${formatLabel}…`,
           "info",
           60000,
         );
@@ -1512,6 +1550,7 @@ function greet(name) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               markdown,
+              format,
               orientation: state.orientation,
               pageSize: state.pageSize,
             }),
@@ -1524,7 +1563,7 @@ function greet(name) {
             a.style.display = "none";
             a.href = url;
             const ts = Math.floor(Date.now() / 1000);
-            a.download = `markdown${ts}.pdf`;
+            a.download = `markdown${ts}.${isEpub ? "epub" : "pdf"}`;
             document.body.appendChild(a);
             a.click();
             URL.revokeObjectURL(url);
@@ -1532,7 +1571,7 @@ function greet(name) {
 
             activeLoadingToast.dismiss();
             activeLoadingToast = null;
-            toast("PDF ready — download started", "success", 3000);
+            toast(`${formatLabel} ready — download started`, "success", 3000);
           } else {
             const errorText = await response.text();
             activeLoadingToast.dismiss();
@@ -1602,6 +1641,7 @@ function greet(name) {
       applyTheme(document.documentElement.getAttribute("data-theme") || "light");
 
       // ── init ───────────────────────────────────────
+      updateFormatUI();
       updateCounts();
       renderPreview();
     </script>

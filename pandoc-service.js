@@ -42,6 +42,20 @@ function requireInternalToken(req, res, next) {
     next();
 }
 
+// EPUB requires a non-empty <title>; without one Pandoc falls back to the
+// literal string "UNTITLED". Detect whether the document already sets a title
+// and, if not, derive one from the first H1 heading (or a generic default).
+function frontmatterHasTitle(markdown) {
+    const match = markdown.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+    return match ? /^title\s*:\s*\S/m.test(match[1]) : false;
+}
+
+function deriveTitle(markdown) {
+    const body = markdown.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '');
+    const heading = body.match(/^#\s+(.+?)\s*#*\s*$/m);
+    return heading ? heading[1].trim() : 'Untitled Document';
+}
+
 // Restrict LaTeX file I/O at the engine level.
 const pandocEnv = {
     ...process.env,
@@ -56,40 +70,69 @@ app.post('/convert', requireInternalToken, upload.single('markdown'), async (req
     let outputFile;
 
     try {
-        const { orientation = 'portrait' } = req.body;
+        const { orientation = 'portrait', format = 'pdf' } = req.body;
+        const outputFormat = format === 'epub' ? 'epub' : 'pdf';
 
+        let markdownContent;
         if (req.file) {
             inputFile = req.file.path;
+            markdownContent = fs.readFileSync(inputFile, 'utf8');
         } else if (req.body.markdown) {
+            markdownContent = req.body.markdown;
             const sessionId = uuidv4();
             inputFile = path.join(workspaceDir, `${sessionId}.md`);
-            fs.writeFileSync(inputFile, req.body.markdown);
+            fs.writeFileSync(inputFile, markdownContent);
         } else {
             return res.status(400).json({ error: 'No markdown content provided' });
         }
 
         const sessionId = path.basename(inputFile, '.md');
-        outputFile = path.join(workspaceDir, `${sessionId}.pdf`);
+        outputFile = path.join(workspaceDir, `${sessionId}.${outputFormat}`);
 
-        const geometryOption = orientation === 'landscape' ? 'a4paper,landscape' : 'a4paper';
+        let pandocArgs;
+        if (outputFormat === 'epub') {
+            // EPUB is HTML-based, so the LaTeX template/engine and page geometry
+            // don't apply. Frontmatter (title/author/date) is mapped to EPUB
+            // metadata automatically; --toc gives readers a navigation document.
+            //  -f markdown-raw_tex  → strip embedded raw LaTeX, matching the PDF path.
+            pandocArgs = [
+                inputFile,
+                '-o', outputFile,
+                '-f', 'markdown-raw_tex',
+                '-t', 'epub',
+                '--number-sections',
+                '--toc',
+                '--toc-depth=2',
+            ];
 
-        // Pandoc args:
-        //  -f markdown-raw_tex  → strip embedded raw LaTeX so user markdown can't
-        //                         reach LuaLaTeX with \input{}, \directlua{}, etc.
-        const pandocArgs = [
-            inputFile,
-            '-o', outputFile,
-            '-f', 'markdown-raw_tex',
-            '--pdf-engine=lualatex',
-            '-V', `geometry:${geometryOption}`,
-            '--template', '/assets/eisvogel.tex',
-            '--number-sections',
-            '--variable', 'caption-justification=centering',
-            '-V', 'mainfont=sourcesanspro',
-            '-V', 'sansfont=sourcesanspro',
-            '-V', 'monofont=sourcecodepro',
-            '-V', 'emoji-font=Noto Color Emoji',
-        ];
+            // Only supply a fallback title when the document defines none, so a
+            // user's frontmatter title is never overridden.
+            if (!frontmatterHasTitle(markdownContent)) {
+                pandocArgs.push('--metadata', `title=${deriveTitle(markdownContent)}`);
+            }
+        } else {
+            const geometryOption = orientation === 'landscape' ? 'a4paper,landscape' : 'a4paper';
+
+            // Pandoc args:
+            //  -f markdown-raw_tex  → strip embedded raw LaTeX so user markdown can't
+            //                         reach LuaLaTeX with \input{}, \directlua{}, etc.
+            pandocArgs = [
+                inputFile,
+                '-o', outputFile,
+                '-f', 'markdown-raw_tex',
+                '--pdf-engine=lualatex',
+                '-V', `geometry:${geometryOption}`,
+                '--template', '/assets/eisvogel.tex',
+                '--number-sections',
+                '--variable', 'caption-justification=centering',
+                '-V', 'mainfont=sourcesanspro',
+                '-V', 'sansfont=sourcesanspro',
+                '-V', 'monofont=sourcecodepro',
+                '-V', 'emoji-font=Noto Color Emoji',
+            ];
+        }
+
+        const contentType = outputFormat === 'epub' ? 'application/epub+zip' : 'application/pdf';
 
         execFile('pandoc', pandocArgs, { env: pandocEnv }, (error, stdout, stderr) => {
             if (error) {
@@ -104,9 +147,9 @@ app.post('/convert', requireInternalToken, upload.single('markdown'), async (req
                 return res.status(500).json({ error: 'Conversion failed' });
             }
 
-            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Type', contentType);
             const timestamp = Math.floor(Date.now() / 1000);
-            res.setHeader('Content-Disposition', `attachment; filename="markdown${timestamp}.pdf"`);
+            res.setHeader('Content-Disposition', `attachment; filename="markdown${timestamp}.${outputFormat}"`);
 
             const stream = fs.createReadStream(outputFile);
             stream.pipe(res);

@@ -22,11 +22,13 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.post('/convert', async (req, res) => {
-    const { markdown, orientation = 'portrait' } = req.body;
+    const { markdown, orientation = 'portrait', format = 'pdf' } = req.body;
 
     if (!markdown) {
         return res.status(400).json({ error: 'No markdown content provided' });
     }
+
+    const outputFormat = format === 'epub' ? 'epub' : 'pdf';
 
     try {
         const response = await fetch(`${PANDOC_SERVICE_URL}/convert`, {
@@ -35,7 +37,7 @@ app.post('/convert', async (req, res) => {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${PANDOC_INTERNAL_TOKEN}`,
             },
-            body: JSON.stringify({ markdown, orientation })
+            body: JSON.stringify({ markdown, orientation, format: outputFormat })
         });
 
         if (!response.ok) {
@@ -44,9 +46,10 @@ app.post('/convert', async (req, res) => {
             return res.status(502).json({ error: 'Conversion failed' });
         }
 
-        res.setHeader('Content-Type', 'application/pdf');
+        const contentType = outputFormat === 'epub' ? 'application/epub+zip' : 'application/pdf';
+        res.setHeader('Content-Type', contentType);
         const timestamp = Math.floor(Date.now() / 1000);
-        res.setHeader('Content-Disposition', `attachment; filename="markdown${timestamp}.pdf"`);
+        res.setHeader('Content-Disposition', `attachment; filename="markdown${timestamp}.${outputFormat}"`);
 
         if (response.body && response.body.getReader) {
             Readable.fromWeb(response.body).pipe(res);
