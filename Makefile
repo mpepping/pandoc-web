@@ -31,8 +31,12 @@ build: ## Build the container images
 up: ## Start the application stack
 	$(COMPOSE) up -d
 
-down: ## Stop the application stack
+down: ## Halt the application stack 
 	$(COMPOSE) down
+
+stop: ## Stop and remove the application stack
+	$(COMPOSE) stop
+	$(COMPOSE) rm -f
 
 logs: ## Show container logs (follow)
 	$(COMPOSE) logs -f
