@@ -10,7 +10,8 @@ RUN npm install
 COPY pandoc-service.js ./
 RUN mkdir -p /workspace
 
-ENV TEXMFCACHE=/workspace/.texlive
+# TEXMFCACHE is set by pandoc-service.js (relative path, resolved against the
+# workspace dir) because an absolute path is rejected under openout_any=p.
 
 EXPOSE 8080
 

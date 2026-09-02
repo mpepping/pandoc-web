@@ -57,12 +57,23 @@ function deriveTitle(markdown) {
 }
 
 // Restrict LaTeX file I/O at the engine level.
+//
+// NOTE on TEXMFCACHE: with openout_any=p (paranoid, also the TeX Live default)
+// kpathsea only permits writes to paths relative to the process' working
+// directory or below $TEXMFOUTPUT. Pandoc overrides TEXMFOUTPUT with its own
+// temporary directory (/tmp/tex2pdf.*) when it runs the PDF engine, so an
+// *absolute* cache path is always rejected. luaotfload treats "no writeable
+// cache path" as fatal, which kills font loading and makes every PDF fail with
+// "Error producing PDF". Keeping the cache path relative makes it resolve
+// against cwd (workspaceDir, see execFile below), which paranoid mode allows.
+const texCacheDir = 'texmf-cache';
 const pandocEnv = {
     ...process.env,
     openin_any: 'p',
     openout_any: 'p',
     shell_escape: 'f',
     TEXMFOUTPUT: workspaceDir,
+    TEXMFCACHE: texCacheDir,
 };
 
 app.post('/convert', requireInternalToken, upload.single('markdown'), async (req, res) => {
@@ -134,9 +145,11 @@ app.post('/convert', requireInternalToken, upload.single('markdown'), async (req
 
         const contentType = outputFormat === 'epub' ? 'application/epub+zip' : 'application/pdf';
 
-        execFile('pandoc', pandocArgs, { env: pandocEnv }, (error, stdout, stderr) => {
+        // cwd must be workspaceDir so the relative TEXMFCACHE above lands in
+        // the (writable) workspace volume.
+        execFile('pandoc', pandocArgs, { env: pandocEnv, cwd: workspaceDir }, (error, stdout, stderr) => {
             if (error) {
-                console.error('Pandoc execution error:', { message: error.message, stderr });
+                console.error('Pandoc execution error:', { message: error.message, stdout, stderr });
                 fs.unlink(inputFile, () => {});
                 return res.status(500).json({ error: 'Conversion failed' });
             }
